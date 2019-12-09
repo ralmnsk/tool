@@ -15,7 +15,7 @@ public class Convertor {
         this.file=file;
     }
 
-    @SuppressWarnings("unchecked")
+//    @SuppressWarnings("unchecked")
     public ArrayList<JSONObject> convert(){
         JSONParser parser = new JSONParser();
         String line=null;
@@ -27,8 +27,6 @@ public class Convertor {
             while((line = bufferedReader.readLine()) != null) {
                 obj = (JSONObject) new JSONParser().parse(line);
                 json.add(obj);
-                System.out.println((String)obj.get("user")+":"+
-                        (Long)obj.get("Time"));
             }
             // Always close files.
             bufferedReader.close();

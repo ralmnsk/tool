@@ -19,37 +19,25 @@
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.11</version>
-      <scope>test</scope>
-    </dependency>
+
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <version>2.9.3</version>
     </dependency>
-      <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
-      <dependency>
-          <groupId>org.projectlombok</groupId>
-          <artifactId>lombok</artifactId>
-          <version>1.18.10</version>
-          <scope>provided</scope>
-      </dependency>
+
     <dependency>
       <groupId>com.googlecode.json-simple</groupId>
       <artifactId>json-simple</artifactId>
       <version>1.1.1</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/de.huxhorn.lilith/de.huxhorn.lilith.data.logging-json-serializer -->
-    <!-- https://mvnrepository.com/artifact/gmbh.dtap/geojson-serializer -->
+    <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
     <dependency>
-      <groupId>gmbh.dtap</groupId>
-      <artifactId>geojson-serializer</artifactId>
-      <version>0.5.1</version>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.10</version>
+      <scope>provided</scope>
     </dependency>
-
 
 
   </dependencies>
