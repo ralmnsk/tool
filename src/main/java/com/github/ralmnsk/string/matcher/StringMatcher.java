@@ -11,10 +11,11 @@ public class StringMatcher implements IStringMatcher{
 
     private String inputString; //string from file
     @Value("${pattern}")
-    String userStr; //string from user
-    String REGEX=" \\S{0,}["+userStr+"]\\S{0,}";
+    private String userStr; //string from user
+
 
     public boolean isExistString(String inputString){
+        String REGEX=userStr;
         this.inputString=inputString;
         Pattern p=Pattern.compile(REGEX);
         Matcher m=p.matcher(inputString);

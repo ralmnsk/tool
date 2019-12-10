@@ -2,7 +2,6 @@ package com.github.ralmnsk.agregator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.ralmnsk.agregator.message.Message;
-import com.github.ralmnsk.agregator.time.unit.TimeUnit;
 import com.github.ralmnsk.convertor.IConvertor;
 import com.github.ralmnsk.file.counter.IFileCounter;
 import com.github.ralmnsk.string.matcher.IStringMatcher;
@@ -22,7 +21,12 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.groupingBy;
+
 @Service
 @PropertySource(value="classpath:application.properties")
 public class Agregator implements IAgregator{
@@ -57,44 +61,59 @@ public class Agregator implements IAgregator{
         List<File> files=fileCounter.getFiles();
         for( File file:files){
             convertor.setFile(file);
-//            ArrayList<JSONObject> jsonList = convertor.convert();
-//            jsonList.stream().map().forEach(list.add(j));
+            List<Message> listFromFile = convertor.convert();
+            listFromFile.stream().forEach(m->list.add(m));
         }
-
-
-        return list;
+        List<Message> messages=agregate(list);
+        return messages;
     }
 
     //json filter and group parameters
-    private List<JSONObject> agregate(List<JSONObject> json){
+    private List<Message> agregate(List<Message> messages){
         //FILTER
-        if(userFilter!=null){
-            json=json.stream().filter(j->j.get("username").equals(userFilter)).collect(Collectors.toList());
+        if(!userFilter.equals("")){
+            messages=messages
+                    .stream()
+                    .filter(message->message.getUser().equals(userFilter))
+                    .collect(Collectors.toList());
         }
 
         long startLong=timeStrToLong(startPeriod);
         long endLong=timeStrToLong(endPeriod);
 
         if((endLong>startLong)&&(endLong>0)&&(startLong>0)){
-            json=json.stream()
-                    .filter(j -> Long.parseLong(j.get("time").toString()) > startLong)
+            messages=messages.stream()
+                    .filter(message -> Timestamp.valueOf(message.getTime()).getTime() > startLong)
                     .collect(Collectors.toList())
                     .stream()
-                    .filter(j->Long.parseLong(j.get("time").toString()) < endLong)
+                    .filter(message->Timestamp.valueOf(message.getTime()).getTime() < endLong)
                     .collect(Collectors.toList());
         }
 
         if((pattern!=null)&&(!pattern.equals(""))){
-            json=json.stream()
-                    .filter(j->stringMatcher.isExistString(j.get("message").toString()))
+            messages=messages.stream()
+                    .filter(m->stringMatcher.isExistString(m.getText()))
                     .collect(Collectors.toList());
         }
 
         //GROUPING
 //        Map<LocalDateTime, List<Data>> byYear = data.stream()
 //                .collect(groupingBy(d -> d.getDate().withMonth(1).withDayOfMonth(1)));
+        if (!userAgregate.equals("username")){
+            Map<String, Long> messageByUser = messages.stream()
+                    .collect(groupingBy(Message::getUser,
+                            Collectors.counting()));
+//            System.out.println(map);
+        }
+        if(timeUnit.equals("hour")){
+            Map<String, List<Message>> messageByHour = messages.stream()
+                    .sorted((m1,m2)->Timestamp.valueOf(m1.getTime()).compareTo(Timestamp.valueOf(m2.getTime())))
+                    .collect(groupingBy(x -> DateTimeFormatter
+                            .ofPattern("YYYY-MM-dd HH").format(x.getTime())));
+        }
 
-        return json;
+
+        return messages;
     }
 
 

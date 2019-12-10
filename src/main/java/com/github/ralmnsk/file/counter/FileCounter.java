@@ -17,7 +17,7 @@ public class FileCounter implements IFileCounter{
     private String directory;
 
     public ArrayList<File> getFiles(){
-        System.out.println(directory);
+//        System.out.println(directory);
             File dir=new File(directory);
             File[] files = dir.listFiles();
         ArrayList<File> list = new ArrayList<File>(Arrays.asList(files));

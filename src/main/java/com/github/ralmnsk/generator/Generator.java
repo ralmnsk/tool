@@ -2,7 +2,6 @@ package com.github.ralmnsk.generator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.ralmnsk.agregator.message.Message;
-import org.json.simple.JSONObject;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -10,7 +9,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
+
 
 
 public class Generator {
