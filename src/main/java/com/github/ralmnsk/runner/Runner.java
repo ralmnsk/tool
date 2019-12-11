@@ -56,9 +56,10 @@ public class Runner {
 //        System.out.println(m.find());
 
         try {
-            String str = "2016-03-04 11:x30";
+            String str = "2016-03-04 11:30";
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
             LocalDateTime dateTime = LocalDateTime.parse(str, formatter);
+            dateTime.withHour(1);
             System.out.println(dateTime);
             long testTime = Timestamp.valueOf(dateTime).getTime();
             LocalDateTime test = Instant

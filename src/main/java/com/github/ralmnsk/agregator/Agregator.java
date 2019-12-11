@@ -2,6 +2,7 @@ package com.github.ralmnsk.agregator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.ralmnsk.agregator.message.Message;
+import com.github.ralmnsk.comparator.SortByTime;
 import com.github.ralmnsk.convertor.IConvertor;
 import com.github.ralmnsk.file.counter.IFileCounter;
 import com.github.ralmnsk.string.matcher.IStringMatcher;
@@ -16,13 +17,11 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -55,7 +54,7 @@ public class Agregator implements IAgregator{
     }
 
     //list of json objects
-    public List<Message> getAgregatedList(){
+    public Object getAgregatedList(){
         ObjectMapper mapper = new ObjectMapper();
         List<Message> list=new ArrayList<>();
         List<File> files=fileCounter.getFiles();
@@ -64,12 +63,12 @@ public class Agregator implements IAgregator{
             List<Message> listFromFile = convertor.convert();
             listFromFile.stream().forEach(m->list.add(m));
         }
-        List<Message> messages=agregate(list);
-        return messages;
+
+        return agregate(list);
     }
 
     //json filter and group parameters
-    private List<Message> agregate(List<Message> messages){
+    private Object agregate(List<Message> messages){
         //FILTER
         if(!userFilter.equals("")){
             messages=messages
@@ -96,24 +95,86 @@ public class Agregator implements IAgregator{
                     .collect(Collectors.toList());
         }
 
+//        Collections.sort(messages,new SortByTime());
         //GROUPING
-//        Map<LocalDateTime, List<Data>> byYear = data.stream()
-//                .collect(groupingBy(d -> d.getDate().withMonth(1).withDayOfMonth(1)));
-        if (!userAgregate.equals("username")){
-            Map<String, Long> messageByUser = messages.stream()
+        if (userAgregate.equals("yes")&&timeUnit.equals("none")){
+            Map<String, Long> collect = messages.stream()
+                    .sorted(Comparator.comparing(Message::getUser))
                     .collect(groupingBy(Message::getUser,
                             Collectors.counting()));
-//            System.out.println(map);
-        }
-        if(timeUnit.equals("hour")){
-            Map<String, List<Message>> messageByHour = messages.stream()
-                    .sorted((m1,m2)->Timestamp.valueOf(m1.getTime()).compareTo(Timestamp.valueOf(m2.getTime())))
-                    .collect(groupingBy(x -> DateTimeFormatter
-                            .ofPattern("YYYY-MM-dd HH").format(x.getTime())));
+            return collect;
         }
 
+        if(userAgregate.equals("no")&&timeUnit.equals("hour")){
+            Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>> collect = messages
+                    .stream()
+                    .collect(groupingBy(m -> m.getTime().getYear(),
+                            groupingBy(m -> m.getTime().getMonthValue(),
+                                    groupingBy(m -> m.getTime().getDayOfMonth(),
+                                            groupingBy(m -> m.getTime().getHour(),
+                                                    Collectors.counting())))));
+            return collect;
+        }
 
-        return messages;
+        if(userAgregate.equals("no")&&timeUnit.equals("day")){
+            Map<Integer, Map<Integer, Map<Integer, Long>>> collect = messages
+                    .stream()
+                    .collect(groupingBy(m -> m.getTime().getYear(),
+                            groupingBy(m -> m.getTime().getMonthValue(),
+                                    groupingBy(m -> m.getTime().getDayOfMonth(),
+                                            Collectors.counting()))));
+            return collect;
+        }
+
+        if(userAgregate.equals("no")&&timeUnit.equals("month")){
+            Map<Integer, Map<Integer, Long>> collect = messages
+                    .stream()
+                    .collect(groupingBy(m -> m.getTime().getYear(),
+                            groupingBy(m -> m.getTime().getMonthValue(),
+                                    Collectors.counting())));
+            return collect;
+        }
+
+//        if(userAgregate.equals("yes")&&timeUnit.equals("year")){
+//            Map<String, Map<Integer, Long>> collect = messages
+//                    .stream()
+//                    .collect(groupingBy(m -> m.getUser(),
+//                            groupingBy(m -> m.getTime().getYear(),
+//                                    Collectors.counting())));
+//            return collect;
+//        }
+
+        if(userAgregate.equals("yes")&&timeUnit.equals("month")){
+            Map<String, Map<Integer, Map<Integer, Long>>> collect = messages.stream()
+                    .collect(groupingBy(m -> m.getUser(),
+                            groupingBy(m -> m.getTime().getYear(),
+                                    groupingBy(m -> m.getTime().getMonthValue(),
+                                            Collectors.counting()))));
+            return collect;
+        }
+
+        if(userAgregate.equals("yes")&&timeUnit.equals("day")){
+            Map<String, Map<Integer, Map<Integer, Map<Integer, Long>>>> collect = messages.stream()
+                    .collect(groupingBy(m -> m.getUser(),
+                            groupingBy(m -> m.getTime().getYear(),
+                                    groupingBy(m -> m.getTime().getMonthValue(),
+                                            groupingBy(m -> m.getTime().getDayOfMonth(),
+                                                    Collectors.counting())))));
+            return collect;
+        }
+
+        if(userAgregate.equals("yes")&&timeUnit.equals("hour")){
+            Map<String, Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>>> collect = messages.stream()
+                    .collect(groupingBy(m -> m.getUser(),
+                            groupingBy(m -> m.getTime().getYear(),
+                                    groupingBy(m -> m.getTime().getMonthValue(),
+                                            groupingBy(m -> m.getTime().getDayOfMonth(),
+                                                    groupingBy(m -> m.getTime().getHour(),
+                                                            Collectors.counting()))))));
+            return collect;
+        }
+
+        return null;
     }
 
 

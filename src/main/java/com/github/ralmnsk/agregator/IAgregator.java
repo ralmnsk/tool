@@ -6,5 +6,5 @@ import com.github.ralmnsk.agregator.message.Message;
 import java.util.List;
 
 public interface IAgregator {
-    List<Message> getAgregatedList();
+    Object getAgregatedList();
 }
