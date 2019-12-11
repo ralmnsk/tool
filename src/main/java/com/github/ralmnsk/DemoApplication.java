@@ -27,7 +27,7 @@ public class DemoApplication{
 //		File file=new File("C:\\Users\\iland\\IdeaProjects\\tool\\file0.log");
 //		convertor.setFile(file);
 //		convertor.convert();
-		System.out.println("");
+//		System.out.println("");
 	}
 
 }

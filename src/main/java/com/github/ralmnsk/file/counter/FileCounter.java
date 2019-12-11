@@ -21,7 +21,7 @@ public class FileCounter implements IFileCounter{
             File dir=new File(directory);
             File[] files = dir.listFiles();
         ArrayList<File> list = new ArrayList<File>(Arrays.asList(files));
-        list.stream().forEach(System.out::println);
+//        list.stream().forEach(System.out::println);
         return list;
     }
 }
