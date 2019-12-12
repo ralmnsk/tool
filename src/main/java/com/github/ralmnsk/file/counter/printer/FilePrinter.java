@@ -1,11 +1,13 @@
 package com.github.ralmnsk.file.counter.printer;
 
-import com.github.ralmnsk.agregator.Agregator;
-import com.github.ralmnsk.agregator.message.Message;
-import lombok.Data;
+
+import com.github.ralmnsk.agregator.IAgregator;
+
+import com.github.ralmnsk.file.counter.IFileCounter;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedWriter;
@@ -16,13 +18,15 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.*;
 
 @Service
 @NoArgsConstructor
-public class FilePrinter implements IFilePrinter{
+public class FilePrinter implements IFilePrinter, CommandLineRunner {
     @Value("${userFilter}")
     private String userFilter;
     @Value("${startPeriod}")
@@ -38,28 +42,99 @@ public class FilePrinter implements IFilePrinter{
     @Value("${path}")
     private String fileName;
     @Autowired
-    private Agregator agregator;
+    private IAgregator agregator;
+    @Autowired
+    private IFileCounter fileCounter;
+
     private String firstString="";
     private String secondString="";
     private String thirdString="";
 
+    @Override
+    public void run(String... args) throws Exception {
+        print();
+    }
+
     public void print(){
-        Object obj=agregator.getAgregatedList();
+        ArrayList<File> files = fileCounter.getFiles();
+//        List<CompletableFuture<Object>> listOfAgregatedList=new ArrayList<>();
+//        for(File f:files){
+//            CompletableFuture<Object> agregatedList = agregator.getAgregatedList(f);
+//            listOfAgregatedList.add(agregatedList);
+//        }
+        List<CompletableFuture<Object>> futureList = files
+                .stream()
+                .map(f -> agregator.getAgregatedList(f))
+                .collect(toList());
+
+        futureList
+                .stream()
+                .map(CompletableFuture::join).collect(Collectors.toList());
+
+        List<Object> objectList = new ArrayList<>();
+        for (CompletableFuture<Object> f : futureList) {
+            Object o = null;
+            try {
+                o = f.get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+            objectList.add(o);
+        }
+
+//        ObjectMapper mapper=new ObjectMapper();
+        if (userAgregate.equals("yes")&&timeUnit.equals("none")){
+
+        }
+
+
+
+//----------------------------------------------------------------
+//        Object obj=agregator.getAgregatedList(files.get(0));
         List<String> list=new ArrayList<>();
         firstString=(" user name:"+userFilter+" | "+"Period: "+startPeriod+" - "+endPeriod+" | pattern:"+pattern+"| groupby: username:"+userAgregate+", time unit:"+timeUnit);
         if (userAgregate.equals("yes")&&timeUnit.equals("none")){
+
+            List<Map<String,Long>> maps=new ArrayList<>();
+            for(Object o:objectList){
+                Map<String, Long> m= (Map<String, Long>)o;
+                maps.add(m);
+            }
+            Map<String,Long> collect=maps.stream()
+                    .flatMap(m -> m.entrySet().stream())
+                    .collect(groupingBy(Map.Entry::getKey, summingLong(Map.Entry::getValue)));
+
             System.out.println("User name | Count of records");
-            Map<String, Long> collect= (Map<String, Long>)obj;
+//            Map<String, Long> collect= (Map<String, Long>)obj;
             for(Map.Entry<String, Long> entry : collect.entrySet()){
                 System.out.println(entry.getKey()+" | "+entry.getValue());
             }
         }
 
+
         if(userAgregate.equals("no")&&timeUnit.equals("hour")){
             secondString=("user name:"+userFilter);
             thirdString=("Hour | Count of records");
-            Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>> collect=
-                    (Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>>)obj;
+
+            List<Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>>> maps=new ArrayList<>();
+            for(Object o:objectList){
+                Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>> m=
+                        (Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>>)o;
+                maps.add(m);
+            }
+//            Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>> collect=maps
+//                    .stream().flatMap(m1->m1.entrySet().stream()
+//                                .flatMap((m2->m2.getValue().entrySet().stream()
+//                                .flatMap((m3->m3.getValue().entrySet().stream()
+//                                .flatMap((m4->m4.getValue().entrySet().stream()
+//                                .map(Map.Entry::getValue)
+//                                .collect(toList()))))))));
+
+
+//            Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>> collect=
+//                    (Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>>)obj;
             for(Map.Entry<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>> entry:collect.entrySet()){
 //                    System.out.print(entry.getKey()+"/");
                 Map<Integer, Map<Integer, Map<Integer, Long>>> months = entry.getValue();
@@ -183,6 +258,8 @@ public class FilePrinter implements IFilePrinter{
         printInFile(list);
         System.out.println();
     }
+
+
 
     private void printInFile(List<String> list){
         BufferedWriter writer = null;
