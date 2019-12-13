@@ -14,10 +14,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -123,6 +120,29 @@ public class FilePrinter implements IFilePrinter, CommandLineRunner {
                 Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>> m=
                         (Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>>)o;
                 maps.add(m);
+            }
+
+            for(Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>> m:maps){
+                Set<Map.Entry<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>>> entries = m.entrySet();
+                for(Map.Entry<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>> entry:entries){
+//                    System.out.print(entry.getKey()+"/");
+                    Map<Integer, Map<Integer, Map<Integer, Long>>> months = entry.getValue();
+                    for(Map.Entry<Integer, Map<Integer, Map<Integer, Long>>> entry1:months.entrySet()){
+//                    System.out.print(entry1.getKey()+"/");
+                        Map<Integer, Map<Integer, Long>> days = entry1.getValue();
+                        for(Map.Entry<Integer, Map<Integer, Long>> entry2:days.entrySet()){
+//                        System.out.print(entry2.getKey()+"/");
+                            Map<Integer, Long> hours = entry2.getValue();
+//                            for(Map.Entry<Integer, Long> entry3:hours.entrySet()){
+//                                list.add(entry.getKey()+"/"+entry1.getKey()+"/"+entry2.getKey()+"/"+entry3.getKey()+" | "+entry3.getValue());
+//
+//                            }
+                            Map<Integer,Long> collect=hours.entrySet().stream()
+                                    .collect(groupingBy(Map.Entry::getKey, summingLong(Map.Entry::getValue)));
+                        }
+
+                    }
+                }
             }
 //            Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>> collect=maps
 //                    .stream().flatMap(m1->m1.entrySet().stream()
