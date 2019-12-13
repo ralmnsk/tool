@@ -22,10 +22,12 @@ import java.time.Month;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
 
 @Service
@@ -110,32 +112,59 @@ public class Agregator implements IAgregator{
         }
 
         if(userAgregate.equals("no")&&timeUnit.equals("hour")){
-            Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>> collect = messages
+
+            messages.stream()
+                    .forEach(m->m.setTime(m.getTime().withSecond(0)
+                            .withMinute(0)));
+
+            Map<LocalDateTime, Long> collect = messages
                     .stream()
-                    .collect(groupingBy(m -> m.getTime().getYear(),
-                            groupingBy(m -> m.getTime().getMonthValue(),
-                                    groupingBy(m -> m.getTime().getDayOfMonth(),
-                                            groupingBy(m -> m.getTime().getHour(),
-                                                    Collectors.counting())))));
+                    .collect(groupingBy(m -> m.getTime(),
+                            Collectors.counting()));
+//            Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>> collect = messages
+//                    .stream()
+//                    .collect(groupingBy(m -> m.getTime().getYear(),
+//                            groupingBy(m -> m.getTime().getMonthValue(),
+//                                    groupingBy(m -> m.getTime().getDayOfMonth(),
+//                                            groupingBy(m -> m.getTime().getHour(),
+//                                                    Collectors.counting())))));
             return CompletableFuture.completedFuture(collect);
         }
 
         if(userAgregate.equals("no")&&timeUnit.equals("day")){
-            Map<Integer, Map<Integer, Map<Integer, Long>>> collect = messages
+            messages.stream()
+                    .forEach(m->m.setTime(m.getTime().withSecond(0)
+                            .withMinute(0).withHour(0)));
+
+            Map<LocalDateTime, Long> collect = messages
                     .stream()
-                    .collect(groupingBy(m -> m.getTime().getYear(),
-                            groupingBy(m -> m.getTime().getMonthValue(),
-                                    groupingBy(m -> m.getTime().getDayOfMonth(),
-                                            Collectors.counting()))));
+                    .collect(groupingBy(m -> m.getTime(),
+                            Collectors.counting()));
+
+//            Map<Integer, Map<Integer, Map<Integer, Long>>> collect = messages
+//                    .stream()
+//                    .collect(groupingBy(m -> m.getTime().getYear(),
+//                            groupingBy(m -> m.getTime().getMonthValue(),
+//                                    groupingBy(m -> m.getTime().getDayOfMonth(),
+//                                            Collectors.counting()))));
             return CompletableFuture.completedFuture(collect);
         }
 
         if(userAgregate.equals("no")&&timeUnit.equals("month")){
-            Map<Integer, Map<Integer, Long>> collect = messages
+            messages.stream()
+                    .forEach(m->m.setTime(m.getTime().withSecond(0)
+                            .withMinute(0).withHour(0).withDayOfMonth(1)));
+
+            Map<LocalDateTime, Long> collect = messages
                     .stream()
-                    .collect(groupingBy(m -> m.getTime().getYear(),
-                            groupingBy(m -> m.getTime().getMonthValue(),
-                                    Collectors.counting())));
+                    .collect(groupingBy(m -> m.getTime(),
+                            Collectors.counting()));
+
+//            Map<Integer, Map<Integer, Long>> collect = messages
+//                    .stream()
+//                    .collect(groupingBy(m -> m.getTime().getYear(),
+//                            groupingBy(m -> m.getTime().getMonthValue(),
+//                                    Collectors.counting())));
             return CompletableFuture.completedFuture(collect);
         }
 
@@ -149,32 +178,62 @@ public class Agregator implements IAgregator{
 //        }
 
         if(userAgregate.equals("yes")&&timeUnit.equals("month")){
-            Map<String, Map<Integer, Map<Integer, Long>>> collect = messages.stream()
+
+            messages.stream()
+                    .forEach(m->m.setTime(m.getTime().withSecond(0)
+                            .withMinute(0).withHour(0).withDayOfMonth(1)));
+
+            Map<String, Map<LocalDateTime, Long>> collect = messages
+                    .stream()
                     .collect(groupingBy(m -> m.getUser(),
-                            groupingBy(m -> m.getTime().getYear(),
-                                    groupingBy(m -> m.getTime().getMonthValue(),
-                                            Collectors.counting()))));
+                            groupingBy(m -> m.getTime(),
+                                    Collectors.counting())));
+
+//            Map<String, Map<Integer, Map<Integer, Long>>> collect = messages.stream()
+//                    .collect(groupingBy(m -> m.getUser(),
+//                            groupingBy(m -> m.getTime().getYear(),
+//                                    groupingBy(m -> m.getTime().getMonthValue(),
+//                                            Collectors.counting()))));
             return CompletableFuture.completedFuture(collect);
         }
 
         if(userAgregate.equals("yes")&&timeUnit.equals("day")){
-            Map<String, Map<Integer, Map<Integer, Map<Integer, Long>>>> collect = messages.stream()
+
+            messages.stream()
+                    .forEach(m->m.setTime(m.getTime().withSecond(0)
+                            .withMinute(0).withHour(0)));
+
+            Map<String, Map<LocalDateTime, Long>> collect = messages
+                    .stream()
                     .collect(groupingBy(m -> m.getUser(),
-                            groupingBy(m -> m.getTime().getYear(),
-                                    groupingBy(m -> m.getTime().getMonthValue(),
-                                            groupingBy(m -> m.getTime().getDayOfMonth(),
-                                                    Collectors.counting())))));
+                            groupingBy(m -> m.getTime(),
+                                    Collectors.counting())));
+//            Map<String, Map<Integer, Map<Integer, Map<Integer, Long>>>> collect = messages.stream()
+//                    .collect(groupingBy(m -> m.getUser(),
+//                            groupingBy(m -> m.getTime().getYear(),
+//                                    groupingBy(m -> m.getTime().getMonthValue(),
+//                                            groupingBy(m -> m.getTime().getDayOfMonth(),
+//                                                    Collectors.counting())))));
             return CompletableFuture.completedFuture(collect);
         }
 
         if(userAgregate.equals("yes")&&timeUnit.equals("hour")){
-            Map<String, Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>>> collect = messages.stream()
+            messages.stream()
+                    .forEach(m->m.setTime(m.getTime().withSecond(0)
+                            .withMinute(0)));
+
+            Map<String, Map<LocalDateTime, Long>> collect = messages
+                    .stream()
                     .collect(groupingBy(m -> m.getUser(),
-                            groupingBy(m -> m.getTime().getYear(),
-                                    groupingBy(m -> m.getTime().getMonthValue(),
-                                            groupingBy(m -> m.getTime().getDayOfMonth(),
-                                                    groupingBy(m -> m.getTime().getHour(),
-                                                            Collectors.counting()))))));
+                            groupingBy(m -> m.getTime(),
+                                    Collectors.counting())));
+//            Map<String, Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>>> collect = messages.stream()
+//                    .collect(groupingBy(m -> m.getUser(),
+//                            groupingBy(m -> m.getTime().getYear(),
+//                                    groupingBy(m -> m.getTime().getMonthValue(),
+//                                            groupingBy(m -> m.getTime().getDayOfMonth(),
+//                                                    groupingBy(m -> m.getTime().getHour(),
+//                                                            Collectors.counting()))))));
             return CompletableFuture.completedFuture(collect);
         }
 
