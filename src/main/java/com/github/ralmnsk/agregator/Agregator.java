@@ -10,6 +10,7 @@ import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +32,7 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
 
 @Service
+@Scope(value="prototype")
 @PropertySource(value="classpath:application.properties")
 public class Agregator implements IAgregator{
     @Value("${userFilter}")
@@ -62,16 +64,14 @@ public class Agregator implements IAgregator{
     public CompletableFuture<Object> getAgregatedList(File file){
 //
         System.out.println(Thread.currentThread().getName()+" start:"+LocalDateTime.now());
-        List<Message> list=new ArrayList<>();
-//        List<File> files=fileCounter.getFiles();
-//        for( File file:files){
+//        List<Message> list=new LinkedList<>();
             convertor.setFile(file);
             List<Message> listFromFile = convertor.convert();
-            listFromFile.stream().forEach(m->list.add(m));
-//        }
-
-        return agregate(list);
+//            listFromFile.stream().forEach(m->list.add(m));
+        CompletableFuture<Object> agregate = agregate(listFromFile);
+        return agregate;
     }
+
 
     //json filter and group parameters
     private CompletableFuture<Object> agregate(List<Message> messages){
@@ -83,33 +83,51 @@ public class Agregator implements IAgregator{
                     .collect(Collectors.toList());
         }
 
-        long startLong=timeStrToLong(startPeriod);
-        long endLong=timeStrToLong(endPeriod);
+        long startLong=0L;
+        long endLong=0L;
 
-        if((endLong>startLong)&&(endLong>0)&&(startLong>0)){
+        if(!startPeriod.equals("")&&(!endPeriod.equals(""))){
+            startLong=timeStrToLong(startPeriod);
+            endLong=timeStrToLong(endPeriod);
+        }
+
+        if(!startPeriod.equals("")&&(!endPeriod.equals("")
+                &&(endLong>startLong)&&(endLong>0)&&(startLong>0))){
+            long start=startLong;
+            long end=endLong;
             messages=messages.stream()
-                    .filter(message -> Timestamp.valueOf(message.getTime()).getTime() > startLong)
+                    .filter(message -> Timestamp.valueOf(message.getTime()).getTime() > start)
                     .collect(Collectors.toList())
                     .stream()
-                    .filter(message->Timestamp.valueOf(message.getTime()).getTime() < endLong)
+                    .filter(message->Timestamp.valueOf(message.getTime()).getTime() < end)
                     .collect(Collectors.toList());
         }
 
         if((pattern!=null)&&(!pattern.equals(""))){
-            messages=messages.stream()
-                    .filter(m->stringMatcher.isExistString(m.getText()))
-                    .collect(Collectors.toList());
+            List<Message> messagesByPattern=new LinkedList<>();
+            for(Message m:messages){
+                if(stringMatcher.isExistString(m.getText())){
+                    messagesByPattern.add(m);
+                }
+            }
+            messages=messagesByPattern;
+//            messages=messages.stream()
+//                    .filter(m->stringMatcher.isExistString(m.getText()))
+//                    .collect(Collectors.toList());
         }
 
-//        Collections.sort(messages,new SortByTime());
+//
         //GROUPING
         if (userAgregate.equals("yes")&&timeUnit.equals("none")){
             Map<String, Long> collect = messages.stream()
                     .sorted(Comparator.comparing(Message::getUser))
                     .collect(groupingBy(Message::getUser,
                             Collectors.counting()));
+
             return CompletableFuture.completedFuture(collect);
         }
+
+
 
         if(userAgregate.equals("no")&&timeUnit.equals("hour")){
 
@@ -121,15 +139,11 @@ public class Agregator implements IAgregator{
                     .stream()
                     .collect(groupingBy(m -> m.getTime(),
                             Collectors.counting()));
-//            Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>> collect = messages
-//                    .stream()
-//                    .collect(groupingBy(m -> m.getTime().getYear(),
-//                            groupingBy(m -> m.getTime().getMonthValue(),
-//                                    groupingBy(m -> m.getTime().getDayOfMonth(),
-//                                            groupingBy(m -> m.getTime().getHour(),
-//                                                    Collectors.counting())))));
+
             return CompletableFuture.completedFuture(collect);
         }
+
+
 
         if(userAgregate.equals("no")&&timeUnit.equals("day")){
             messages.stream()
@@ -141,14 +155,10 @@ public class Agregator implements IAgregator{
                     .collect(groupingBy(m -> m.getTime(),
                             Collectors.counting()));
 
-//            Map<Integer, Map<Integer, Map<Integer, Long>>> collect = messages
-//                    .stream()
-//                    .collect(groupingBy(m -> m.getTime().getYear(),
-//                            groupingBy(m -> m.getTime().getMonthValue(),
-//                                    groupingBy(m -> m.getTime().getDayOfMonth(),
-//                                            Collectors.counting()))));
             return CompletableFuture.completedFuture(collect);
         }
+
+
 
         if(userAgregate.equals("no")&&timeUnit.equals("month")){
             messages.stream()
@@ -160,22 +170,10 @@ public class Agregator implements IAgregator{
                     .collect(groupingBy(m -> m.getTime(),
                             Collectors.counting()));
 
-//            Map<Integer, Map<Integer, Long>> collect = messages
-//                    .stream()
-//                    .collect(groupingBy(m -> m.getTime().getYear(),
-//                            groupingBy(m -> m.getTime().getMonthValue(),
-//                                    Collectors.counting())));
             return CompletableFuture.completedFuture(collect);
         }
 
-//        if(userAgregate.equals("yes")&&timeUnit.equals("year")){
-//            Map<String, Map<Integer, Long>> collect = messages
-//                    .stream()
-//                    .collect(groupingBy(m -> m.getUser(),
-//                            groupingBy(m -> m.getTime().getYear(),
-//                                    Collectors.counting())));
-//            return collect;
-//        }
+
 
         if(userAgregate.equals("yes")&&timeUnit.equals("month")){
 
@@ -189,13 +187,10 @@ public class Agregator implements IAgregator{
                             groupingBy(m -> m.getTime(),
                                     Collectors.counting())));
 
-//            Map<String, Map<Integer, Map<Integer, Long>>> collect = messages.stream()
-//                    .collect(groupingBy(m -> m.getUser(),
-//                            groupingBy(m -> m.getTime().getYear(),
-//                                    groupingBy(m -> m.getTime().getMonthValue(),
-//                                            Collectors.counting()))));
             return CompletableFuture.completedFuture(collect);
         }
+
+
 
         if(userAgregate.equals("yes")&&timeUnit.equals("day")){
 
@@ -208,14 +203,11 @@ public class Agregator implements IAgregator{
                     .collect(groupingBy(m -> m.getUser(),
                             groupingBy(m -> m.getTime(),
                                     Collectors.counting())));
-//            Map<String, Map<Integer, Map<Integer, Map<Integer, Long>>>> collect = messages.stream()
-//                    .collect(groupingBy(m -> m.getUser(),
-//                            groupingBy(m -> m.getTime().getYear(),
-//                                    groupingBy(m -> m.getTime().getMonthValue(),
-//                                            groupingBy(m -> m.getTime().getDayOfMonth(),
-//                                                    Collectors.counting())))));
+
             return CompletableFuture.completedFuture(collect);
         }
+
+
 
         if(userAgregate.equals("yes")&&timeUnit.equals("hour")){
             messages.stream()
@@ -227,13 +219,7 @@ public class Agregator implements IAgregator{
                     .collect(groupingBy(m -> m.getUser(),
                             groupingBy(m -> m.getTime(),
                                     Collectors.counting())));
-//            Map<String, Map<Integer, Map<Integer, Map<Integer, Map<Integer, Long>>>>> collect = messages.stream()
-//                    .collect(groupingBy(m -> m.getUser(),
-//                            groupingBy(m -> m.getTime().getYear(),
-//                                    groupingBy(m -> m.getTime().getMonthValue(),
-//                                            groupingBy(m -> m.getTime().getDayOfMonth(),
-//                                                    groupingBy(m -> m.getTime().getHour(),
-//                                                            Collectors.counting()))))));
+
             return CompletableFuture.completedFuture(collect);
         }
 

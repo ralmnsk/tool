@@ -31,13 +31,7 @@ public class DemoApplication{
 		ApplicationContext context=new AnnotationConfigApplicationContext(DemoApplication.class);
 		IFilePrinter fp=context.getBean("filePrinter", FilePrinter.class);
 		fp.print();
-//		IAgregator agregator=(IAgregator)context.getBean("agregator");
-//		agregator.getAgregatedList();
-//		IConvertor convertor=(IConvertor)context.getBean("convertor");
-//		File file=new File("C:\\Users\\iland\\IdeaProjects\\tool\\file0.log");
-//		convertor.setFile(file);
-//		convertor.convert();
-//		System.out.println("");
+		System.exit(0);
 	}
 
 	@Bean

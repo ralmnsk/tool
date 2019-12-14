@@ -23,4 +23,17 @@ public class Message {
     @JsonFormat(pattern = "YYYY-MM-dd HH:mm:ss")
     private LocalDateTime time;
     private String text;
+    private Long count;
+
+    public Message(String user,LocalDateTime time, Long count){
+        this.user=user;
+        this.time=time;
+        this.count=count;
+    }
+
+    public Message(String user,LocalDateTime time, String text){
+        this.user=user;
+        this.time=time;
+        this.text=text;
+    }
 }

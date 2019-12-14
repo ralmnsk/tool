@@ -9,4 +9,5 @@ import java.util.concurrent.CompletableFuture;
 
 public interface IAgregator {
     CompletableFuture<Object> getAgregatedList(File file);
+    long timeStrToLong(String str);
 }
