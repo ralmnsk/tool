@@ -8,7 +8,6 @@ import com.github.ralmnsk.agregator.message.Message;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -26,7 +25,7 @@ public class Convertor implements IConvertor{
         this.file = file;
     }
 
-    //    @SuppressWarnings("unchecked")
+
     public ArrayList<Message> convert(){
         JSONParser parser = new JSONParser();
         String line=null;
@@ -53,7 +52,6 @@ public class Convertor implements IConvertor{
                 msg.setTime(time);
                 list.add(msg);
             }
-            // Always close files.
             bufferedReader.close();
         } catch (IOException | ParseException e) {
             e.printStackTrace();

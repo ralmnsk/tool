@@ -17,11 +17,10 @@ public class FileCounter implements IFileCounter{
     private String directory;
 
     public ArrayList<File> getFiles(){
-//        System.out.println(directory);
             File dir=new File(directory);
             File[] files = dir.listFiles();
-        ArrayList<File> list = new ArrayList<File>(Arrays.asList(files));
-//        list.stream().forEach(System.out::println);
+            ArrayList<File> list = new ArrayList<File>(Arrays.asList(files));
+
         return list;
     }
 }

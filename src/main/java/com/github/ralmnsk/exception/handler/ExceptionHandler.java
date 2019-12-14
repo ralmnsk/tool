@@ -58,7 +58,7 @@ public class ExceptionHandler implements IExceptionHandler {
         }
 
         int groupingFlag=0;
-        if(!userAgregate.equals("yes")&&!userAgregate.equals("none")){
+        if(!userAgregate.equals("yes")&&!userAgregate.equals("no")){
             throw new ParameterException("userAgregate have to be 'yes' or 'no'");
         }
 

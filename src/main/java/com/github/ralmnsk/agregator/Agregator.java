@@ -1,34 +1,23 @@
 package com.github.ralmnsk.agregator;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.github.ralmnsk.agregator.message.Message;
-import com.github.ralmnsk.comparator.SortByTime;
 import com.github.ralmnsk.convertor.IConvertor;
-import com.github.ralmnsk.file.counter.IFileCounter;
 import com.github.ralmnsk.string.matcher.IStringMatcher;
-import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
 import java.io.File;
-import java.io.IOException;
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.Month;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
 
 @Service
@@ -47,14 +36,11 @@ public class Agregator implements IAgregator{
     private String userAgregate;
     @Value("${timeUnit}")
     private String timeUnit;
-//    @Autowired
-//    private IFileCounter fileCounter;
+
     @Autowired
     private IConvertor convertor;
     @Autowired
     private IStringMatcher stringMatcher;
-
-//    private List<JSONObject> json;
 
     public Agregator(){
     }
@@ -62,18 +48,15 @@ public class Agregator implements IAgregator{
     //list
     @Async
     public CompletableFuture<Object> getAgregatedList(File file){
-//
         System.out.println(Thread.currentThread().getName()+" start:"+LocalDateTime.now());
-//        List<Message> list=new LinkedList<>();
             convertor.setFile(file);
             List<Message> listFromFile = convertor.convert();
-//            listFromFile.stream().forEach(m->list.add(m));
         CompletableFuture<Object> agregate = agregate(listFromFile);
         return agregate;
     }
 
 
-    //json filter and group parameters
+    //filter and group parameters
     private CompletableFuture<Object> agregate(List<Message> messages){
         //FILTER
         if(!userFilter.equals("")){
@@ -110,13 +93,9 @@ public class Agregator implements IAgregator{
                     messagesByPattern.add(m);
                 }
             }
-            messages=messagesByPattern;
-//            messages=messages.stream()
-//                    .filter(m->stringMatcher.isExistString(m.getText()))
-//                    .collect(Collectors.toList());
         }
 
-//
+
         //GROUPING
         if (userAgregate.equals("yes")&&timeUnit.equals("none")){
             Map<String, Long> collect = messages.stream()

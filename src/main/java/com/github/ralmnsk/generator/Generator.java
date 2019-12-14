@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 
-
+//ONLY TO GENERATE LOG FILES
 public class Generator {
 public static void main(String...a){
     ObjectMapper mapper = new ObjectMapper();

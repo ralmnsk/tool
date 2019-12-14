@@ -2,17 +2,15 @@ package com.github.ralmnsk.file.counter.printer;
 
 
 import com.github.ralmnsk.agregator.IAgregator;
-
 import com.github.ralmnsk.agregator.message.Message;
-import com.github.ralmnsk.exception.handler.ParameterException;
 import com.github.ralmnsk.file.counter.IFileCounter;
 import com.github.ralmnsk.exception.handler.IExceptionHandler;
+import com.github.ralmnsk.string.corrector.ICorrector;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -21,7 +19,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.*;
 
@@ -48,6 +45,8 @@ public class FilePrinter implements IFilePrinter, CommandLineRunner {
     private IFileCounter fileCounter;
     @Autowired
     private IExceptionHandler handler;
+    @Autowired
+    private ICorrector c;
 
     private String firstString="";
     private String secondString="";
@@ -58,7 +57,7 @@ public class FilePrinter implements IFilePrinter, CommandLineRunner {
 
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         print();
     }
 
@@ -83,9 +82,6 @@ public class FilePrinter implements IFilePrinter, CommandLineRunner {
             futureList.add(agregatedList);
         }
 
-//        futureList
-//                .stream()
-//                .map(CompletableFuture::join).collect(Collectors.toList());
 
         List<Object> objectList = new ArrayList<>();
         for (CompletableFuture<Object> f : futureList) {
@@ -124,7 +120,7 @@ public class FilePrinter implements IFilePrinter, CommandLineRunner {
                     .collect(groupingBy(Map.Entry::getKey, summingLong(Map.Entry::getValue)));
 
             for(Map.Entry<String, Long> entry : collect.entrySet()){
-                String str=(entry.getKey()+" | "+entry.getValue());
+                String str=(entry.getKey()+" | "+entry.getValue()); //user and record counts
                 list.add(str);
             }
         }
@@ -139,17 +135,19 @@ public class FilePrinter implements IFilePrinter, CommandLineRunner {
                 Map<LocalDateTime, Long> collect1 = getLocalDateTimeLongMap(objectList);
                 for (Map.Entry<LocalDateTime, Long> entry : collect1.entrySet()) {
                     list.add(entry.getKey().getYear() + "/"
-                            + entry.getKey().getMonthValue() + "/" + entry.getKey().getDayOfMonth()
-                            + "T" + entry.getKey().getHour() + " | " + entry.getValue());
+                            + c.correct(entry.getKey().getMonthValue()) + "/" + c.correct(entry.getKey().getDayOfMonth())
+                            + "T" + c.correct(entry.getKey().getHour()) + " | " + entry.getValue());
                 }
             }
 
 //-----------------------------------------------------------------------------
             if (userAgregate.equals("no") && timeUnit.equals("day")) {
+                secondString = ("user name:" + userFilter);
+                thirdString = ("Day | Count of records");
                 Map<LocalDateTime, Long> collect1 = getLocalDateTimeLongMap(objectList);
                 for (Map.Entry<LocalDateTime, Long> entry : collect1.entrySet()) {
                     list.add(entry.getKey().getYear() + "/"
-                            + entry.getKey().getMonthValue() + "/" + entry.getKey().getDayOfMonth() +
+                            + c.correct(entry.getKey().getMonthValue()) + "/" + c.correct(entry.getKey().getDayOfMonth()) +
                             " | " + entry.getValue());
                 }
             }
@@ -157,18 +155,18 @@ public class FilePrinter implements IFilePrinter, CommandLineRunner {
 
 //-----------------------------------------------------------------------------
             if (userAgregate.equals("no") && timeUnit.equals("month")) {
+                secondString = ("user name:" + userFilter);
+                thirdString = ("Month | Count of records");
                 Map<LocalDateTime, Long> collect1 = getLocalDateTimeLongMap(objectList);
                 for (Map.Entry<LocalDateTime, Long> entry : collect1.entrySet()) {
                     list.add(entry.getKey().getYear() + "/"
-                            + entry.getKey().getMonthValue() +
+                            + c.correct(entry.getKey().getMonthValue()) +
                             " | " + entry.getValue());
                 }
             }
 
 // end where userFilter=no
 //userAgregate=yes and timeUnit
-
-
 //-------------------------------------------------------------------------------
              if (userAgregate.equals("yes") && timeUnit.equals("month")) {
                  secondString = ("User | Month | Count of records");
@@ -176,7 +174,7 @@ public class FilePrinter implements IFilePrinter, CommandLineRunner {
 
                  collect.entrySet().stream().forEach(s->s.getValue().entrySet()
                         .stream().forEach(t->list.add(s.getKey()+
-                                 " | "+t.getKey().getYear()+" / "+t.getKey().getMonthValue()+" | "
+                                 " | "+t.getKey().getYear()+" / "+c.correct(t.getKey().getMonthValue())+" | "
                                  +t.getValue())));
              }
 //-------------------------------------------------------------------------------
@@ -185,8 +183,8 @@ public class FilePrinter implements IFilePrinter, CommandLineRunner {
                  Map<String, Map<LocalDateTime, Long>> collect = getStringMapMap(objectList);
                  collect.entrySet().stream().forEach(s->s.getValue().entrySet()
                          .stream().forEach(t->list.add(s.getKey()+
-                                 " | "+t.getKey().getYear()+" / "+t.getKey().getMonthValue()+
-                                 "/"+t.getKey().getDayOfMonth()+" | "
+                                 " | "+t.getKey().getYear()+" / "+c.correct(t.getKey().getMonthValue())+
+                                 "/"+c.correct(t.getKey().getDayOfMonth())+" | "
                                  +t.getValue())));
              }
 //-------------------------------------------------------------------------------
@@ -195,12 +193,12 @@ public class FilePrinter implements IFilePrinter, CommandLineRunner {
                  Map<String, Map<LocalDateTime, Long>> collect = getStringMapMap(objectList);
                  collect.entrySet().stream().forEach(s->s.getValue().entrySet()
                          .stream().forEach(t->list.add(s.getKey()+
-                                 " | "+t.getKey().getYear()+" / "+t.getKey().getMonthValue()+
-                                 "/"+t.getKey().getDayOfMonth()+"/"+t.getKey().getHour()+" | "
+                                 " | "+t.getKey().getYear()+" / "+c.correct(t.getKey().getMonthValue())+
+                                 "/"+c.correct(t.getKey().getDayOfMonth())+"/"+c.correct(t.getKey().getHour())+" | "
                                  +t.getValue())));
              }
 //-------------------------------------------------------------------------------
-        list.sort(Comparator.comparing(String::toString));
+        Collections.sort(list,String::compareTo);
         printInFile(list);
     }
 
